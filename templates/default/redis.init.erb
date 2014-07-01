@@ -21,6 +21,8 @@ EXEC="sudo -u <%= @user %> <%= File.join(@bin_path, 'redis-server') %> <%= @conf
 EXEC="runuser <%= @user %> -c \"<%= File.join(@bin_path, 'redis-server') %> <%= @configdir %>/${REDISNAME}.conf\""
 <% end %>
 CLIEXEC=<%= File.join(@bin_path, 'redis-cli') %>
+ON_STARTUP_FILE=<%= @configdir%>/.redis_run_on_startup.rds
+EXEC_STARTUP_CMDS="${CLIEXEC} -p <%= @port %> < ${ON_STARTUP_FILE}"
 
 <% connection_string = String.new %>
 <% if @unixsocket.nil? %> 
@@ -48,6 +50,11 @@ case "$1" in
         else
                 echo "Starting Redis server..."
                 eval $EXEC
+                sleep 5
+                if [ -a $ON_STARTUP_FILE ]; then
+                    echo "Running Startup Commands"
+                    eval $EXEC_STARTUP_CMDS
+                fi
         fi
         ;;
     stop)
